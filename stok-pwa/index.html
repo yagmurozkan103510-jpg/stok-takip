@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>StokTakip</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--accent:#38bdf8;--accent2:#0ea5e9;--accent-glow:rgba(56,189,248,.15);--green:#34d399;--green-bg:rgba(52,211,153,.12);--red:#f87171;--red-bg:rgba(248,113,113,.12);--orange:#fb923c;--orange-bg:rgba(251,146,60,.12);--text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;--radius:14px;--radius-sm:10px}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none;color:inherit}
+input,select{font-family:inherit;outline:none;border:none;color:var(--text);background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;font-size:15px;width:100%;transition:.2s}
+input:focus,select:focus{box-shadow:0 0 0 2px var(--accent)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select option{background:var(--bg2);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+.header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid rgba(255,255,255,.06);z-index:10;flex-shrink:0}
+.header h1{font-size:20px;font-weight:700}.header h1 span{color:var(--accent)}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg2);transition:.2s}
+.icon-btn:active{transform:scale(.92)}.icon-btn svg{width:20px;height:20px;stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;padding:0 16px}
+.tab{flex:1;padding:12px 0;text-align:center;font-size:13px;font-weight:600;color:var(--text3);position:relative;transition:.2s}
+.tab.active{color:var(--accent)}.tab.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:3px;background:var(--accent);border-radius:3px 3px 0 0}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:100px}
+.page{display:none}.page.active{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.dash-card{background:var(--bg2);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
+.dash-card::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:50%;filter:blur(30px);opacity:.3}
+.dash-card.blue::before{background:var(--accent)}.dash-card.green::before{background:var(--green)}.dash-card.orange::before{background:var(--orange)}.dash-card.red::before{background:var(--red)}
+.dash-card .label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.dash-card .value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500}
+.dash-card.blue .value{color:var(--accent)}.dash-card.green .value{color:var(--green)}.dash-card.orange .value{color:var(--orange)}.dash-card.red .value{color:var(--red)}
+.section-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px}
+.product-item{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:.15s}
+.product-item:active{transform:scale(.985);background:var(--bg3)}
+.pi-icon{width:42px;height:42px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.pi-info{flex:1;min-width:0}.pi-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.pi-stock{text-align:right;flex-shrink:0}.pi-stock .count{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600}.pi-stock .unit{font-size:11px;color:var(--text3)}
+.stock-low{color:var(--red)}.stock-med{color:var(--orange)}.stock-ok{color:var(--green)}
+.fab{position:fixed;bottom:24px;right:50%;transform:translateX(50%);width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(56,189,248,.35);z-index:50;transition:.15s}
+.fab:active{transform:translateX(50%) scale(.9)}.fab svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2.5}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;padding:20px 16px 30px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-header h2{font-size:18px;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center}
+.modal-close svg{width:18px;height:18px;stroke:var(--text2);fill:none;stroke-width:2.5}
+.fg{margin-bottom:12px}.fl{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.fr{display:flex;gap:10px}.fr>*{flex:1}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:var(--radius-sm);font-size:15px;font-weight:600;transition:.15s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-danger{background:var(--red-bg);color:var(--red)}.btn-success{background:var(--green-bg);color:var(--green)}.btn-outline{background:var(--bg3);color:var(--text2)}
+.btn-sm{padding:10px 16px;font-size:13px;width:auto}
+.search-box{position:relative;margin-bottom:14px}.search-box input{padding-left:40px;background:var(--bg2)}
+.search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--text3);fill:none;stroke-width:2}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg3);color:var(--text);padding:12px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;z-index:300;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}.toast.show{opacity:1}
+.sale-item{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.empty svg{width:48px;height:48px;stroke:var(--text3);fill:none;stroke-width:1.5;margin-bottom:12px;opacity:.5}.empty p{color:var(--text3);font-size:14px}
+.sett-item{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;width:100%;text-align:left;transition:.15s}
+.sett-item:active{background:var(--bg3)}.sett-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sett-icon svg{width:20px;height:20px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sett-info{flex:1}.sett-title{font-size:14px;font-weight:600}.sett-desc{font-size:12px;color:var(--text3);margin-top:2px}
+.cat-badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:var(--accent-glow);color:var(--accent)}
+.dt-top{text-align:center;padding:10px 0 16px}.dt-icon{width:64px;height:64px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px}
+.dt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.dt-cell{background:var(--bg);border-radius:var(--radius-sm);padding:12px;text-align:center}
+.dt-cell .dl{font-size:11px;color:var(--text3);text-transform:uppercase}.dt-cell .dv{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;margin-top:4px}
+.dt-actions{display:flex;gap:8px;margin-top:16px}.dt-actions .btn{flex:1}
+.cat-gida{background:rgba(251,146,60,.15);color:#fb923c}.cat-icecek{background:rgba(56,189,248,.15);color:#38bdf8}.cat-temizlik{background:rgba(168,85,247,.15);color:#a855f7}.cat-kisisel{background:rgba(236,72,153,.15);color:#ec4899}.cat-elektronik{background:rgba(34,211,238,.15);color:#22d3ee}.cat-diger{background:rgba(148,163,184,.15);color:#94a3b8}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--bg2);color:var(--text3);white-space:nowrap;flex-shrink:0}.chip.active{background:var(--accent-glow);color:var(--accent)}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;display:none;align-items:center;justify-content:center;padding:20px}.confirm-overlay.show{display:flex}
+.confirm-box{background:var(--bg2);border-radius:var(--radius);padding:24px;max-width:320px;width:100%;text-align:center}
+.confirm-box h3{font-size:16px;margin-bottom:8px}.confirm-box p{font-size:14px;color:var(--text2);margin-bottom:20px}
+.confirm-btns{display:flex;gap:8px}.confirm-btns .btn{flex:1}
+#scanner-overlay{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column}
+#scanner-overlay.show{display:flex}
+.scanner-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,.9);flex-shrink:0;z-index:5}
+.scanner-top h3{color:#fff;font-size:16px}
+.scanner-close{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center}
+.scanner-close svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.5}
+#scanner-reader{flex:1;background:#000}
+#scanner-reader video{width:100%!important;height:100%!important;object-fit:cover!important}
+.scanner-bottom{background:rgba(15,23,42,.95);padding:16px;flex-shrink:0}
+.scanner-manual{display:flex;gap:8px}
+.scanner-manual input{flex:1;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.15);font-size:16px;padding:14px}
+.scanner-manual input::placeholder{color:rgba(255,255,255,.35)}
+.scanner-manual .btn{flex-shrink:0;width:auto;padding:14px 20px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header"><h1>Stok<span>Takip</span></h1><button class="icon-btn" onclick="openSettings()"><svg><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button></div>
+  <div class="tabs"><div class="tab active" onclick="switchTab('dashboard')">Panel</div><div class="tab" onclick="switchTab('products')">Ürünler</div><div class="tab" onclick="switchTab('sales')">Satışlar</div></div>
+  <div class="content">
+    <div id="page-dashboard" class="page active"><div class="dash-grid"><div class="dash-card blue"><div class="label">Toplam Ürün</div><div class="value" id="s-total">0</div></div><div class="dash-card green"><div class="label">Toplam Stok</div><div class="value" id="s-stock">0</div></div><div class="dash-card orange"><div class="label">Stok Değeri</div><div class="value" id="s-value">₺0</div></div><div class="dash-card red"><div class="label">Düşük Stok</div><div class="value" id="s-low">0</div></div></div><div class="section-title">Düşük Stoklu Ürünler</div><div id="low-list"></div></div>
+    <div id="page-products" class="page"><div class="search-box"><svg><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="search-input" placeholder="Ürün ara..." oninput="renderProducts()"></div><div class="chips" id="filter-chips"></div><div id="product-list"></div></div>
+    <div id="page-sales" class="page"><div class="search-box"><svg><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="sale-search" placeholder="Satış ara..." oninput="renderSales()"></div><div id="sale-list"></div></div>
+    <div id="page-settings" class="page"><div class="section-title">Veri Yönetimi</div><button class="sett-item" onclick="exportBackup()"><div class="sett-icon" style="background:var(--green-bg)"><svg style="stroke:var(--green)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><div class="sett-info"><div class="sett-title">Yedeği Dışa Aktar</div><div class="sett-desc">JSON olarak indir</div></div></button><button class="sett-item" onclick="document.getElementById('imp-file').click()"><div class="sett-icon" style="background:var(--accent-glow)"><svg style="stroke:var(--accent)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div class="sett-info"><div class="sett-title">Yedekten Geri Yükle</div><div class="sett-desc">JSON dosyasından yükle</div></div></button><input type="file" id="imp-file" accept=".json" style="display:none" onchange="importBackup(event)"><div class="section-title">Kategori</div><button class="sett-item" onclick="openCatModal()"><div class="sett-icon" style="background:var(--orange-bg)"><svg style="stroke:var(--orange)"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><div class="sett-info"><div class="sett-title">Kategorileri Düzenle</div><div class="sett-desc">Ekle/sil</div></div></button><div class="section-title" style="margin-top:24px">Tehlikeli</div><button class="sett-item" onclick="confirmClearAll()"><div class="sett-icon" style="background:var(--red-bg)"><svg style="stroke:var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div><div class="sett-info"><div class="sett-title" style="color:var(--red)">Tüm Verileri Sil</div></div></button><button class="btn btn-outline" style="margin-top:20px" onclick="switchTab('dashboard')">← Geri</button></div>
+  </div>
+  <button class="fab" id="main-fab" onclick="openActionMenu()"><svg><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+</div>
+
+<div class="modal-overlay" id="action-modal"><div class="modal" style="padding-bottom:40px"><div class="modal-header"><h2>İşlem Seç</h2><button class="modal-close" onclick="closeModal('action-modal')"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div style="display:flex;flex-direction:column;gap:8px"><button class="btn btn-primary" onclick="closeModal('action-modal');openScanner('add')">📷 Barkod Tara & Ürün Ekle</button><button class="btn btn-outline" onclick="closeModal('action-modal');openAddModal('')">✏️ Manuel Ürün Ekle</button><button class="btn btn-success" onclick="closeModal('action-modal');openScanner('sale')">🛒 Barkod Tara & Satış Yap</button></div></div></div>
+
+<div class="modal-overlay" id="product-modal"><div class="modal"><div class="modal-header"><h2 id="pm-title">Ürün Ekle</h2><button class="modal-close" onclick="closeModal('product-modal')"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><form id="pform" onsubmit="saveProduct(event)"><input type="hidden" id="pf-id"><div class="fg"><label class="fl">Barkod</label><div style="display:flex;gap:8px"><input type="text" id="pf-barcode" placeholder="Barkod numarası" required><button type="button" class="btn btn-sm btn-outline" onclick="openScanner('field')">📷</button></div></div><div class="fg"><label class="fl">Ürün Adı</label><input type="text" id="pf-name" placeholder="Ürün adı" required></div><div class="fg"><label class="fl">Kategori</label><select id="pf-cat"></select></div><div class="fr"><div class="fg"><label class="fl">Alış (₺)</label><input type="number" step="0.01" id="pf-cost" placeholder="0.00" required></div><div class="fg"><label class="fl">Satış (₺)</label><input type="number" step="0.01" id="pf-price" placeholder="0.00" required></div></div><div class="fr"><div class="fg"><label class="fl">Stok</label><input type="number" id="pf-stock" placeholder="0" required></div><div class="fg"><label class="fl">Min.</label><input type="number" id="pf-min" placeholder="5" value="5"></div></div><div class="fg"><label class="fl">Alış Tarihi</label><input type="date" id="pf-date"></div><div class="fg"><label class="fl">Not</label><input type="text" id="pf-note" placeholder="İsteğe bağlı"></div><button type="submit" class="btn btn-primary" style="margin-top:8px">Kaydet</button></form></div></div>
+
+<div class="modal-overlay" id="sale-modal"><div class="modal"><div class="modal-header"><h2>Satış Yap</h2><button class="modal-close" onclick="closeModal('sale-modal')"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div id="sale-info" style="margin-bottom:14px"></div><form id="sform" onsubmit="processSale(event)"><input type="hidden" id="sf-pid"><div class="fr"><div class="fg"><label class="fl">Adet</label><input type="number" id="sf-qty" value="1" min="1" required></div><div class="fg"><label class="fl">Satış (₺)</label><input type="number" step="0.01" id="sf-price" required></div></div><button type="submit" class="btn btn-success" style="margin-top:8px">Onayla</button></form></div></div>
+
+<div class="modal-overlay" id="detail-modal"><div class="modal"><div class="modal-header"><h2>Detay</h2><button class="modal-close" onclick="closeModal('detail-modal')"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div id="detail-content"></div></div></div>
+
+<div class="modal-overlay" id="cat-modal"><div class="modal"><div class="modal-header"><h2>Kategoriler</h2><button class="modal-close" onclick="closeModal('cat-modal')"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div id="cat-list"></div><div style="display:flex;gap:8px;margin-top:12px"><input type="text" id="new-cat" placeholder="Yeni kategori"><button class="btn btn-primary btn-sm" style="flex-shrink:0" onclick="addCat()">Ekle</button></div></div></div>
+
+<div class="confirm-overlay" id="confirm-dlg"><div class="confirm-box"><h3 id="cf-title"></h3><p id="cf-msg"></p><div class="confirm-btns"><button class="btn btn-outline" onclick="closeConfirm()">İptal</button><button class="btn btn-danger" id="cf-ok">Evet</button></div></div></div>
+
+<div id="scanner-overlay">
+  <div class="scanner-top"><h3 id="scanner-title">Barkod Tara</h3><button class="scanner-close" onclick="closeScanner()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="scanner-reader"></div>
+  <div class="scanner-bottom"><div class="scanner-manual"><input type="text" id="manual-barcode" placeholder="veya barkodu manuel yazın" inputmode="numeric"><button class="btn btn-primary" onclick="manualSubmit()">Gönder</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DB='StokTakipDB';let db=null,categories=[],activeFilter='',scanMode='add',html5Scanner=null;
+const DEFCATS=['Gıda','İçecek','Temizlik','Kişisel Bakım','Elektronik','Kırtasiye','Diğer'];
+
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('products')){const p=d.createObjectStore('products',{keyPath:'id'});p.createIndex('barcode','barcode',{unique:false})}if(!d.objectStoreNames.contains('sales'))d.createObjectStore('sales',{keyPath:'id'});if(!d.objectStoreNames.contains('settings'))d.createObjectStore('settings',{keyPath:'key'})};r.onsuccess=e=>{db=e.target.result;res()};r.onerror=rej})}
+function dbPut(s,d){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');t.objectStore(s).put(d);t.oncomplete=()=>r();t.onerror=j})}
+function dbGet(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readonly'),q=t.objectStore(s).get(k);q.onsuccess=()=>r(q.result);q.onerror=j})}
+function dbAll(s){return new Promise((r,j)=>{const t=db.transaction(s,'readonly'),q=t.objectStore(s).getAll();q.onsuccess=()=>r(q.result);q.onerror=j})}
+function dbDel(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');t.objectStore(s).delete(k);t.oncomplete=()=>r();t.onerror=j})}
+function dbClr(s){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');t.objectStore(s).clear();t.oncomplete=()=>r();t.onerror=j})}
+function findBC(bc){return new Promise((r,j)=>{const t=db.transaction('products','readonly'),q=t.objectStore('products').index('barcode').getAll(bc);q.onsuccess=()=>r(q.result);q.onerror=j})}
+
+function openScanner(mode){
+  scanMode=mode;
+  document.getElementById('scanner-title').textContent=mode==='sale'?'Satış İçin Tara':mode==='field'?'Barkod Tara':'Ürün Ekle İçin Tara';
+  document.getElementById('scanner-overlay').classList.add('show');
+  document.getElementById('manual-barcode').value='';
+  html5Scanner=new Html5Qrcode("scanner-reader");
+  html5Scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:150},aspectRatio:1.0},onScanSuccess,()=>{}).catch(err=>{console.error(err);toast('Kamera açılamadı.');});
+}
+function onScanSuccess(code){closeScanner();toast('Barkod: '+code);handleBarcode(code,scanMode);}
+function closeScanner(){document.getElementById('scanner-overlay').classList.remove('show');if(html5Scanner){html5Scanner.stop().catch(()=>{});html5Scanner=null}}
+function manualSubmit(){const c=document.getElementById('manual-barcode').value.trim();if(!c){toast('Barkod girin');return}closeScanner();handleBarcode(c,scanMode)}
+async function handleBarcode(code,mode){
+  if(mode==='field'){document.getElementById('pf-barcode').value=code;return}
+  if(mode==='add'){const ex=await findBC(code);if(ex.length>0)showConfirmEx(`"${ex[0].name}" zaten kayıtlı`,'Düzenlemek mi?',()=>openEditModal(ex[0].id),'Düzenle',()=>openAddModal(code),'Yeni Ekle');else openAddModal(code)}
+  if(mode==='sale'){const ex=await findBC(code);if(ex.length>0)openSaleModal(ex[0].id);else{toast('Ürün bulunamadı');showConfirmSimple('Bulunamadı','Yeni ekle?',()=>openAddModal(code))}}
+}
+async function loadCats(){const d=await dbGet('settings','categories');categories=d?d.value:[...DEFCATS];if(!d)await dbPut('settings',{key:'categories',value:categories})}
+async function saveCats(){await dbPut('settings',{key:'categories',value:categories})}
+function fillCatSel(){document.getElementById('pf-cat').innerHTML=categories.map(c=>`<option value="${c}">${c}</option>`).join('')}
+function renderChips(){document.getElementById('filter-chips').innerHTML=`<div class="chip active" onclick="filterCat(this,'')">Tümü</div>`+categories.map(c=>`<div class="chip" onclick="filterCat(this,'${c}')">${c}</div>`).join('')}
+function filterCat(el,c){activeFilter=c;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderProducts()}
+function openCatModal(){renderCatList();showModal('cat-modal')}
+function renderCatList(){document.getElementById('cat-list').innerHTML=categories.map((c,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:6px"><span>${c}</span>${DEFCATS.includes(c)?'':`<button onclick="removeCat(${i})" style="color:var(--red);font-weight:600;font-size:13px">Sil</button>`}</div>`).join('')}
+async function addCat(){const inp=document.getElementById('new-cat'),n=inp.value.trim();if(!n||categories.includes(n))return;categories.push(n);await saveCats();inp.value='';renderCatList();fillCatSel();renderChips();toast('Eklendi')}
+async function removeCat(i){categories.splice(i,1);await saveCats();renderCatList();fillCatSel();renderChips()}
+function toast(m){if(!m)return;const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2500)}
+function showModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function switchTab(n){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const tabs=['dashboard','products','sales'],i=tabs.indexOf(n);if(i>=0)document.querySelectorAll('.tab')[i].classList.add('active');document.getElementById('page-'+n).classList.add('active');document.getElementById('main-fab').style.display=n==='settings'?'none':'flex';if(n==='dashboard')refreshDash();if(n==='products')renderProducts();if(n==='sales')renderSales()}
+function openSettings(){switchTab('settings')}
+function catClass(c){return{'Gıda':'cat-gida','İçecek':'cat-icecek','Temizlik':'cat-temizlik','Kişisel Bakım':'cat-kisisel','Elektronik':'cat-elektronik'}[c]||'cat-diger'}
+function catEmoji(c){return{'Gıda':'🍞','İçecek':'🥤','Temizlik':'🧹','Kişisel Bakım':'💄','Elektronik':'📱','Kırtasiye':'📎','Diğer':'📦'}[c]||'📦'}
+function money(n){return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtDate(d){if(!d)return '-';return new Date(d).toLocaleDateString('tr-TR')}
+function gid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
+async function refreshDash(){const p=await dbAll('products');document.getElementById('s-total').textContent=p.length;document.getElementById('s-stock').textContent=p.reduce((s,x)=>s+(x.stock||0),0).toLocaleString('tr-TR');document.getElementById('s-value').textContent=money(p.reduce((s,x)=>s+(x.stock||0)*(x.cost||0),0));document.getElementById('s-low').textContent=p.filter(x=>(x.stock||0)<=(x.minStock||5)).length;const lp=p.filter(x=>(x.stock||0)<=(x.minStock||5)).sort((a,b)=>a.stock-b.stock);document.getElementById('low-list').innerHTML=lp.length?lp.map(piHTML).join(''):'<div class="empty"><p>Tüm stoklar yeterli!</p></div>'}
+function piHTML(p){const sc=p.stock<=0?'stock-low':p.stock<=(p.minStock||5)?'stock-med':'stock-ok';return `<div class="product-item" onclick="showDetail('${p.id}')"><div class="pi-icon" style="background:${p.stock<=0?'var(--red-bg)':p.stock<=(p.minStock||5)?'var(--orange-bg)':'var(--green-bg)'}">${catEmoji(p.category)}</div><div class="pi-info"><div class="pi-name">${p.name}</div><div class="pi-meta"><span class="cat-badge ${catClass(p.category)}">${p.category}</span> · ${money(p.price)}</div></div><div class="pi-stock"><div class="count ${sc}">${p.stock}</div><div class="unit">adet</div></div></div>`}
+async function renderProducts(){const p=await dbAll('products'),s=document.getElementById('search-input').value.toLowerCase(),f=p.filter(x=>(!s||x.name.toLowerCase().includes(s)||(x.barcode||'').includes(s))&&(!activeFilter||x.category===activeFilter)).sort((a,b)=>a.name.localeCompare(b.name,'tr'));document.getElementById('product-list').innerHTML=f.length?f.map(piHTML).join(''):'<div class="empty"><p>Henüz ürün yok</p></div>'}
+function openAddModal(bc){document.getElementById('pm-title').textContent='Ürün Ekle';document.getElementById('pform').reset();document.getElementById('pf-id').value='';document.getElementById('pf-barcode').value=bc||'';document.getElementById('pf-date').value=new Date().toISOString().split('T')[0];document.getElementById('pf-min').value='5';fillCatSel();showModal('product-modal')}
+async function openEditModal(id){const p=await dbGet('products',id);if(!p)return;document.getElementById('pm-title').textContent='Düzenle';fillCatSel();document.getElementById('pf-id').value=p.id;document.getElementById('pf-barcode').value=p.barcode||'';document.getElementById('pf-name').value=p.name;document.getElementById('pf-cat').value=p.category;document.getElementById('pf-cost').value=p.cost;document.getElementById('pf-price').value=p.price;document.getElementById('pf-stock').value=p.stock;document.getElementById('pf-min').value=p.minStock||5;document.getElementById('pf-date').value=p.purchaseDate||'';document.getElementById('pf-note').value=p.note||'';showModal('product-modal')}
+async function saveProduct(e){e.preventDefault();const id=document.getElementById('pf-id').value||gid();await dbPut('products',{id,barcode:document.getElementById('pf-barcode').value.trim(),name:document.getElementById('pf-name').value.trim(),category:document.getElementById('pf-cat').value,cost:parseFloat(document.getElementById('pf-cost').value)||0,price:parseFloat(document.getElementById('pf-price').value)||0,stock:parseInt(document.getElementById('pf-stock').value)||0,minStock:parseInt(document.getElementById('pf-min').value)||5,purchaseDate:document.getElementById('pf-date').value,note:document.getElementById('pf-note').value.trim(),createdAt:(await dbGet('products',id))?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});closeModal('product-modal');toast(document.getElementById('pf-id').value?'Güncellendi':'Eklendi');renderProducts();refreshDash()}
+async function showDetail(id){const p=await dbGet('products',id);if(!p)return;document.getElementById('detail-content').innerHTML=`<div class="dt-top"><div class="dt-icon" style="background:var(--accent-glow)">${catEmoji(p.category)}</div><div style="font-size:18px;font-weight:700">${p.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);margin-top:4px">${p.barcode||''}</div><span class="cat-badge ${catClass(p.category)}" style="margin-top:6px">${p.category}</span></div><div class="dt-grid"><div class="dt-cell"><div class="dl">Stok</div><div class="dv ${p.stock<=(p.minStock||5)?'stock-low':'stock-ok'}">${p.stock}</div></div><div class="dt-cell"><div class="dl">Min</div><div class="dv">${p.minStock||5}</div></div><div class="dt-cell"><div class="dl">Alış</div><div class="dv">${money(p.cost)}</div></div><div class="dt-cell"><div class="dl">Satış</div><div class="dv">${money(p.price)}</div></div><div class="dt-cell"><div class="dl">Değer</div><div class="dv">${money(p.cost*p.stock)}</div></div><div class="dt-cell"><div class="dl">Kâr</div><div class="dv" style="color:var(--green)">${money((p.price-p.cost)*p.stock)}</div></div></div><div style="font-size:13px;color:var(--text3);margin-bottom:14px">Alış: ${fmtDate(p.purchaseDate)}${p.note?' · '+p.note:''}</div><div class="dt-actions"><button class="btn btn-success" onclick="closeModal('detail-modal');openSaleModal('${p.id}')">Satış</button><button class="btn btn-outline" onclick="closeModal('detail-modal');openEditModal('${p.id}')">Düzenle</button><button class="btn btn-danger" onclick="closeModal('detail-modal');confirmDel('${p.id}')">Sil</button></div>`;showModal('detail-modal')}
+function confirmDel(id){showConfirmSimple('Silinsin mi?','Geri alınamaz.',async()=>{await dbDel('products',id);toast('Silindi');renderProducts();refreshDash()})}
+async function openSaleModal(pid){const p=await dbGet('products',pid);if(!p)return;document.getElementById('sf-pid').value=p.id;document.getElementById('sf-price').value=p.price;document.getElementById('sf-qty').value='1';document.getElementById('sale-info').innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:var(--radius-sm)"><div style="font-size:24px">${catEmoji(p.category)}</div><div><div style="font-weight:600">${p.name}</div><div style="font-size:12px;color:var(--text3)">Stok: ${p.stock}</div></div></div>`;showModal('sale-modal')}
+async function processSale(e){e.preventDefault();const pid=document.getElementById('sf-pid').value,qty=parseInt(document.getElementById('sf-qty').value),price=parseFloat(document.getElementById('sf-price').value),p=await dbGet('products',pid);if(!p||qty>p.stock||qty<=0){toast(qty>p?.stock?'Yetersiz stok!':'Hata');return}p.stock-=qty;p.updatedAt=new Date().toISOString();await dbPut('products',p);await dbPut('sales',{id:gid(),productId:p.id,productName:p.name,barcode:p.barcode,category:p.category,quantity:qty,unitPrice:price,totalPrice:price*qty,cost:p.cost,profit:(price-p.cost)*qty,date:new Date().toISOString()});closeModal('sale-modal');toast(`${qty}x "${p.name}" satıldı`);refreshDash();renderProducts();renderSales()}
+async function renderSales(){const sales=await dbAll('sales'),s=(document.getElementById('sale-search')?.value||'').toLowerCase();let f=sales.filter(x=>!s||x.productName.toLowerCase().includes(s)||(x.barcode||'').includes(s)).sort((a,b)=>new Date(b.date)-new Date(a.date));const c=document.getElementById('sale-list');if(!f.length){c.innerHTML='<div class="empty"><p>Henüz satış yok</p></div>';return}const today=new Date().toISOString().split('T')[0],ts=f.filter(x=>x.date.startsWith(today));let h='';if(ts.length)h+=`<div style="display:flex;gap:8px;margin-bottom:14px"><div style="flex:1;background:var(--green-bg);border-radius:var(--radius-sm);padding:12px;text-align:center"><div style="font-size:11px;color:var(--green);font-weight:600;text-transform:uppercase">Bugün Ciro</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--green);margin-top:4px">${money(ts.reduce((s,x)=>s+x.totalPrice,0))}</div></div><div style="flex:1;background:var(--accent-glow);border-radius:var(--radius-sm);padding:12px;text-align:center"><div style="font-size:11px;color:var(--accent);font-weight:600;text-transform:uppercase">Bugün Kâr</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--accent);margin-top:4px">${money(ts.reduce((s,x)=>s+x.profit,0))}</div></div></div>`;h+=f.map(x=>`<div class="sale-item"><div style="flex:1"><div style="font-weight:600">${x.productName}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">${x.quantity} adet · ${fmtDate(x.date)}</div></div><div style="text-align:right"><div style="font-family:'JetBrains Mono',monospace;color:var(--green);font-weight:600">${money(x.totalPrice)}</div><div style="font-size:11px;color:var(--accent)">+${money(x.profit)}</div></div></div>`).join('');c.innerHTML=h}
+function showConfirmSimple(t,m,fn){document.getElementById('cf-title').textContent=t;document.getElementById('cf-msg').textContent=m;const ok=document.getElementById('cf-ok');ok.textContent='Evet';ok.className='btn btn-danger';ok.onclick=()=>{closeConfirm();fn()};if(document.getElementById('cf-alt'))document.getElementById('cf-alt').remove();document.getElementById('confirm-dlg').classList.add('show')}
+function showConfirmEx(t,m,fn1,txt1,fn2,txt2){document.getElementById('cf-title').textContent=t;document.getElementById('cf-msg').textContent=m;const ok=document.getElementById('cf-ok');ok.textContent=txt1;ok.className='btn btn-primary';ok.onclick=()=>{closeConfirm();fn1()};const btns=document.querySelector('.confirm-btns');if(document.getElementById('cf-alt'))document.getElementById('cf-alt').remove();if(fn2){const ab=document.createElement('button');ab.id='cf-alt';ab.className='btn btn-outline';ab.textContent=txt2;ab.onclick=()=>{closeConfirm();fn2()};btns.appendChild(ab)}document.getElementById('confirm-dlg').classList.add('show')}
+function closeConfirm(){document.getElementById('confirm-dlg').classList.remove('show');if(document.getElementById('cf-alt'))document.getElementById('cf-alt').remove()}
+async function exportBackup(){const b={version:1,date:new Date().toISOString(),categories,products:await dbAll('products'),sales:await dbAll('sales')};const bl=new Blob([JSON.stringify(b,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=`StokTakip_${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(a.href);toast('İndirildi')}
+async function importBackup(e){const file=e.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!d.products)throw 0;showConfirmSimple('Geri Yükle',`${d.products.length} ürün yüklenecek.`,async()=>{await dbClr('products');await dbClr('sales');for(const p of d.products)await dbPut('products',p);for(const s of(d.sales||[]))await dbPut('sales',s);if(d.categories){categories=d.categories;await saveCats()}toast('Yüklendi!');refreshDash();renderProducts();renderSales();fillCatSel();renderChips()})}catch(e){toast('Geçersiz dosya')}e.target.value=''}
+function confirmClearAll(){showConfirmSimple('Tüm Verileri Sil','Geri alınamaz!',async()=>{await dbClr('products');await dbClr('sales');toast('Silindi');refreshDash();renderProducts();renderSales()})}
+function openActionMenu(){showModal('action-modal')}
+if('serviceWorker' in navigator){window.addEventListener('load', () => {navigator.serviceWorker.register('sw.js').catch(e=>console.log(e));});}
+async function init(){await openDB();await loadCats();fillCatSel();renderChips();refreshDash();renderProducts();renderSales()}
+init();
+</script>
+</body>
+</html>
